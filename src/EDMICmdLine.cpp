@@ -4,6 +4,8 @@
 #include <Type/MK10E.h>
 #elif defined(TYPE_MK6N)
 #include <Type/MK6N.h>
+#elif defined(TYPE_MK6E)
+#include <Type/MK6E.h>
 #endif
 
 #define NUL 0x00  // NULL termination character
@@ -23,8 +25,11 @@
 #define L_FUNC 0x4C // LOGIN REGISTER
 
 // LOGIN - LEDMI,IMDEIMDE0
-static uint8_t register_login[15] = {L_FUNC, 0x45, 0x44, 0x4D, 0x49, 0x2C, 0x49, 0x4D, 0x44, 0x45, 0x49, 0x4D, 0x44, 0x45, 0x00};
+// 0x4c, 0x52, 0x45, 0x41, 0x44, 0x45, 0x52, 0x2c, 0x52, 0x45, 0x41, 0x44 ,0x45 ,0x52
+// static uint8_t register_login[15] = {L_FUNC, 0x45, 0x44, 0x4D, 0x49, 0x2C, 0x49, 0x4D, 0x44, 0x45, 0x49, 0x4D, 0x44, 0x45, 0x00};
+static uint8_t register_login[15] = {L_FUNC, 0x52, 0x45, 0x41, 0x44, 0x45, 0x52, 0x2c, 0x52, 0x45, 0x41, 0x44, 0x45, 0x52, 0x00};
 static uint8_t register_serialNum[] = {0xF0, 0x02};
+static uint8_t register_time[] = {0xF0, 0x3D};
 static uint8_t register_logout[] = {0x58};
 
 static const uint16_t registerBank[] PROGMEM =
@@ -44,27 +49,6 @@ static const uint16_t registerBank[] PROGMEM =
         REG_ENERGY_KWHLBP,  // kwhLBP
         REG_ENERGY_KWHBP,   // kwhBP
         REG_ENERGY_KWHTOT}; // kwhTotal
-
-typedef enum
-{
-  REG_INS_VOLTR,     // VOLT R
-  REG_INS_VOLTS,     // VOLT S
-  REG_INS_VOLTT,     // VOLT T
-  REG_INS_CURRR,     // CURRENT R
-  REG_INS_CURRS,     // CURRENT S
-  REG_INS_CURRT,     // CURRENT T
-  REG_INS_WATTR,     // WATT R
-  REG_INS_WATTS,     // WATT S
-  REG_INS_WATTT,     // WATT T
-  REG_INS_PFACT,     // pF
-  REG_INS_FREQU,     // FREQUENCY
-  REG_ENG_KVARH,     // kVarh
-  REG_ENG_KWHLBP,    // kwhLBP
-  REG_ENG_KWHBP,     // kwhBP
-  REG_ENG_KWHTOT,    // kwhTotal
-  REG_SYS_SERNUMBER, // SERIAL NUMBER
-  REG_MEAS_ALL       // ALL MEASURE REGISTER
-} register_read;
 
 enum class EdmiCMDReader::Step : uint8_t
 {
@@ -112,6 +96,7 @@ static uint16_t ccitt_16[256] = {
 static unsigned short
 CalculateCharacterCRC16(unsigned short crc, uint8_t c)
 {
+  // debus.printf("\n");
   return ((crc << 8) ^ ccitt_16[((crc >> 8) ^ c)]);
 }
 
@@ -410,7 +395,7 @@ void EdmiCMDReader::step_logout()
   TX_cmd(register_logout, sizeof(register_logout));
   len = RX_message(charAck, CHAR_RX_ACK, RX_TIMEOUT);
   Serial.print("step_logout() - len - ");
-  Serial.println(len);
+  // Serial.println(len);
   if (charAck[0] == ACK)
   {
     step_ = Step::Finished;
@@ -440,7 +425,7 @@ String EdmiCMDReader::read_Serialnumber(/*char *output, int len*/)
   {
     send_cmdR(register_serialNum);
     len = RX_message(charData, CHAR_RX_DATA, RX_TIMEOUT);
-    Serial.println(len);
+    // Serial.println(len);
     if (charData[0] == CAN)
     {
       regError_ = (ErrorCode)charData[1];
@@ -454,9 +439,9 @@ String EdmiCMDReader::read_Serialnumber(/*char *output, int len*/)
         // Serial.printf("%2X", charData[i]);
         // Serial.printf("%s", output);
       }
-      Serial.println(output);
+      // Serial.println(output);
       _currentValues.serialNumber = output;
-      Serial.println(_currentValues.serialNumber);
+      // Serial.println(_currentValues.serialNumber);
     }
     else
       output = "";
@@ -503,8 +488,8 @@ bool EdmiCMDReader::read_default()
       charBuffer[CHAR_DATA_FLOAT];
   size_t
       i = 0;
-  Serial.print("read_default() - len - ");
-  Serial.println(len);
+  // Serial.print("read_default() - len - ");
+  // Serial.println(len);
 
   if (status_ == Status::Busy)
   {
@@ -551,25 +536,62 @@ bool EdmiCMDReader::read_default()
       _currentValues.kwhWBP = ConvertB32ToFloat(allData[13]);
       _currentValues.kwhTotal = ConvertB32ToFloat(allData[14]);
     }
-    Serial.printf("%.4f\n", _currentValues.voltR);
-    Serial.printf("%.4f\n", _currentValues.voltS);
-    Serial.printf("%.4f\n", _currentValues.voltT);
-    Serial.printf("%.4f\n", _currentValues.currentR);
-    Serial.printf("%.4f\n", _currentValues.currentS);
-    Serial.printf("%.4f\n", _currentValues.currentT);
-    Serial.printf("%.4f\n", _currentValues.wattR);
-    Serial.printf("%.4f\n", _currentValues.wattS);
-    Serial.printf("%.4f\n", _currentValues.wattT);
-    Serial.printf("%.4f\n", _currentValues.pf);
-    Serial.printf("%.4f\n", _currentValues.frequency);
-    Serial.printf("%.4f\n", _currentValues.kVarh);
-    Serial.printf("%.4f\n", _currentValues.kwhLWBP);
-    Serial.printf("%.4f\n", _currentValues.kwhWBP);
-    Serial.printf("%.4f\n", _currentValues.kwhTotal);
+    // Serial.printf("%.4f\n", _currentValues.voltR);
+    // Serial.printf("%.4f\n", _currentValues.voltS);
+    // Serial.printf("%.4f\n", _currentValues.voltT);
+    // Serial.printf("%.4f\n", _currentValues.currentR);
+    // Serial.printf("%.4f\n", _currentValues.currentS);
+    // Serial.printf("%.4f\n", _currentValues.currentT);
+    // Serial.printf("%.4f\n", _currentValues.wattR);
+    // Serial.printf("%.4f\n", _currentValues.wattS);
+    // Serial.printf("%.4f\n", _currentValues.wattT);
+    // Serial.printf("%.4f\n", _currentValues.pf);
+    // Serial.printf("%.4f\n", _currentValues.frequency);
+    // Serial.printf("%.4f\n", _currentValues.kVarh);
+    // Serial.printf("%.4f\n", _currentValues.kwhLWBP);
+    // Serial.printf("%.4f\n", _currentValues.kwhWBP);
+    // Serial.printf("%.4f\n", _currentValues.kwhTotal);
   }
 
   step_ = Step::Logout;
   return true;
+}
+
+void EdmiCMDReader::read_time()
+{
+  uint8_t
+      charData[CHAR_RX_DATA];
+  size_t
+      len;
+
+  status_ = Status::Busy;
+
+  step_login();
+  if (status_ == Status::LoggedIn)
+  {
+    send_cmdR(register_time);
+    len = RX_message(charData, CHAR_RX_DATA, RX_TIMEOUT);
+    // Serial.println(len);
+    if (charData[0] == CAN)
+    {
+      regError_ = (ErrorCode)charData[1];
+    }
+    else if (charData[0] == R_FUNC and charData[1] == register_time[0] and charData[2] == register_time[1])
+    {
+      timeEdmi.hour = charData[6];
+      // Serial.println(timeEdmi.hour);
+      timeEdmi.minute = charData[7];
+      // Serial.println(timeEdmi.minute);
+      timeEdmi.seconds = charData[8];
+      // Serial.println(timeEdmi.seconds);
+      timeEdmi.day = charData[3];
+      // Serial.println(timeEdmi.day);
+      timeEdmi.month = charData[4];
+      // Serial.println(timeEdmi.year);
+      timeEdmi.year = charData[5];
+    }
+  }
+  // status_ = Status::Connect;
 }
 
 String EdmiCMDReader::serialNumber()

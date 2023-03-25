@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
-
 #include <HardwareSerial.h>
 #include <pgmspace.h>
 
@@ -25,6 +24,16 @@ public:
         ProtocolError,
         ChecksumError
     };
+
+    struct
+    {
+        int hour;
+        int minute;
+        int seconds;
+        int day;
+        int month;
+        int year;
+    } timeEdmi; // time from edmi
 
     const std::map<Status, std::string> EDMI_STATUS_MAP = {
         {Status::Disconnect, "Disconnect"},
@@ -51,6 +60,7 @@ public:
     void begin(unsigned long baud);
 
     void keepAlive();
+    void read_time();
     void read_looping();
 
     void TX_raw(uint8_t d);
