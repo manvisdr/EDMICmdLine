@@ -13,8 +13,8 @@ class EdmiCMDReader
 public:
     enum class Status : uint8_t
     {
-        Connect,
         Disconnect,
+        Connect,
         Ready,
         LoggedIn,
         NotLogin,
@@ -59,7 +59,7 @@ public:
 
     void begin(unsigned long baud);
 
-    void keepAlive();
+    int keepAlive();
     void read_time();
     void read_looping();
 

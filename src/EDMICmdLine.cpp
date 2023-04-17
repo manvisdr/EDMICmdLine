@@ -327,11 +327,11 @@ void EdmiCMDReader::change_status(Status to)
   status_ = to;
 }
 
-void EdmiCMDReader::keepAlive()
+int EdmiCMDReader::keepAlive()
 {
-  Serial.println("KEEPALIVE");
+  // Serial.println("KEEPALIVE");
   if (status_ == Status::Busy or status_ == Status::Ready)
-    return;
+    return 0;
 
   uint8_t
       charAck[CHAR_RX_ACK];
@@ -340,9 +340,15 @@ void EdmiCMDReader::keepAlive()
   TX_raw(ETX);
   RX_message(charAck, CHAR_RX_ACK, RX_TIMEOUT);
   if (charAck[0] == ACK)
+  {
     status_ = Status::Connect;
+    return 1;
+  }
   else
+  {
     status_ = Status::Disconnect;
+    return 0;
+  }
 }
 
 void EdmiCMDReader::step_start()
@@ -366,11 +372,11 @@ void EdmiCMDReader::step_login()
 
   TX_cmd(register_login, sizeof(register_login));
   len = RX_message(charAck, CHAR_RX_ACK, RX_TIMEOUT);
-  Serial.print("step_login() - len - ");
-  Serial.println(len);
+  // Serial.print("step_login() - len - ");
+  // Serial.println(len);
   if (charAck[0] == ACK)
   {
-    Serial.println("step_login() -> ACK");
+    // Serial.println("step_login() -> ACK");
     if (step_ == Step::Started)
       step_ = Step::Read;
     else
@@ -394,7 +400,7 @@ void EdmiCMDReader::step_logout()
 
   TX_cmd(register_logout, sizeof(register_logout));
   len = RX_message(charAck, CHAR_RX_ACK, RX_TIMEOUT);
-  Serial.print("step_logout() - len - ");
+  // Serial.print("step_logout() - len - ");
   // Serial.println(len);
   if (charAck[0] == ACK)
   {
@@ -598,7 +604,7 @@ String EdmiCMDReader::serialNumber()
 {
   if (strcmp(read_Serialnumber().c_str(), "") == 0)
   {
-    Serial.println("KOSONG");
+    // Serial.println("KOSONG");
     return String("");
   }
 
